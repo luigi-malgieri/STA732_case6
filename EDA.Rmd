@@ -15,16 +15,423 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
+```{r}
+getwd()
+x <- read.csv("powerConsumption.csv")
+
+z1 <- ts(x["Zone1"])
+plot(z1)
+spec_result1 <- spec.pgram(z1, log = "no", main = "Spectral Density using Periodogram")
+
+top_indices <- order(spec_result$spec, decreasing = TRUE)[1:6]  # Get indices of 4 highest spectral densities
+top_freqs <- spec_result$freq[top_indices]  # Extract corresponding frequencies
+
+top_periods <- 1 / top_freqs # this are top periods. multiply by 10 to get minutes, so divide by 6 to get hours
+top_periods/6
+
+z2 <- ts(x["Zone2"])
+plot(z2)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+```{r}
+spec_result2 <- spec.pgram(z2, log = "no", main = "Spectral Density using Periodogram")
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+z3 <- ts(x["Zone3"])
+plot(z3)
+spec_result3 <- spec.pgram(z3, log = "no", main = "Spectral Density using Periodogram")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+# Convert to periods
+top_periods <- 1 / top_freqs # this are top periods. multiply by 10 to get minutes, so divide by 6 to get hours
+top_periods/6
+# 8760 hours a day. So main cyclical components are 1/2 day, 1 day and 1 year/
+
+```
+
+The dataset is composed of 1y and 5 days. So estimating yearly lags would
+
+```{r}
+var <- names(x)
+# var <- var[var != "DateTime"] 
+
+var <- c("Zone1","Zone2","Zone3")
+
+# Set up plotting area: e.g., 2 rows x 3 columns (adjust based on number of zones)
+par(mfrow = c(2, length(var)))  # adjust layout as needed
+
+# Loop over each zone
+for (zone in var) {
+  # Time series
+  z <- ts(x[[zone]])
+  
+  # Plot the time series
+  plot(z, main = paste("Time Series -", zone), ylab = zone, xlab = "Time")
+  
+  # Spectral density
+  spec_result <- spec.pgram(z, log = "no", main = paste("Spectral Density -", zone))
+
+  # Highlight top 6 frequencies
+  top_indices <- order(spec_result$spec, decreasing = TRUE)[1:6]
+  top_freqs <- spec_result$freq[top_indices]
+
+}
+
+# Reset plotting layout
+par(mfrow = c(1, 1))
+```
+```{r}
+library(ggplot2)
+library(patchwork)
+
+var <- c("Zone1", "Zone2", "Zone3")
+colors <- c("Zone1" = "#1f77b4", "Zone2" = "#ff7f0e", "Zone3" = "#2ca02c")
+
+ts_plots <- list()
+spec_plots <- list()
+
+for (zone in var) {
+  df_ts <- data.frame(Time = 1:nrow(x), Value = x[[zone]])
+  p_ts <- ggplot(df_ts, aes(x = Time, y = Value)) +
+    geom_line(color = colors[[zone]], size = 0.7) +
+    labs(title = paste("Time Series -", zone), y = zone, x = "Time") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))  # rotate x labels
+
+  ts_plots[[zone]] <- p_ts
+
+  z <- ts(x[[zone]])
+  spec_result <- spec.pgram(z, plot = FALSE)
+
+  df_spec <- data.frame(
+    Frequency = spec_result$freq,
+    Spectrum = spec_result$spec
+  )
+
+  top_indices <- order(df_spec$Spectrum, decreasing = TRUE)[1:6]
+  top_freqs <- df_spec$Frequency[top_indices]
+
+  p_spec <- ggplot(df_spec, aes(x = Frequency, y = Spectrum)) +
+    geom_line(color = colors[[zone]], linewidth = 0.2) +
+    labs(title = paste("Periodogram -", zone), y = "Spectral Density", x = "Frequency") +
+    theme_minimal()
+
+  spec_plots[[zone]] <- p_spec
+}
+
+# Combine and save
+final_plot <- (ts_plots[[1]] | ts_plots[[2]] | ts_plots[[3]]) /
+              (spec_plots[[1]] | spec_plots[[2]] | spec_plots[[3]])
+
+ggsave("time_series_periodogram.png", plot = final_plot, width = 12, height = 6, dpi = 300)
+```
+
+```{r}
+# Read data
+x <- read.csv("powerConsumption.csv")
+
+# Initialize variables
+zones <- c("Zone1", "Zone2", "Zone3")
+n_per <- 6
+top_freq_matrix <- matrix(NA, nrow = n_per, ncol = length(zones))
+top_periods_matrix <- matrix(NA, nrow = n_per, ncol = length(zones))
+colnames(top_periods_matrix) <- zones
+
+# Plot settings (avoid margin errors)
+par(mfrow = c(1, 3))  # Plot all three side-by-side
+par(mar = c(4, 4, 2, 1))  # Adjust margins
+
+# Loop over each zone
+for (i in seq_along(zones)) {
+  zone <- zones[i]
+  z <- ts(x[[zone]])
+  
+  # Spectral density plot
+  spec_result <- spec.pgram(z, log = "no", main = paste("Spectral Density -", zone))
+  
+  # Get top 6 frequencies and convert to periods
+  top_indices <- order(spec_result$spec, decreasing = TRUE)[1:n_per]
+  top_freqs <- spec_result$freq[top_indices]
+  top_periods <- 1 / top_freqs
+  top_periods <- top_periods /6
+  # Store in matrix
+  top_periods_matrix[, i] <- top_periods
+  top_freq_matrix[, i] <- top_freqs
+}
+
+top_periods_matrix <- t(top_periods_matrix)
+top_freq_matrix <-  t(top_freq_matrix)
+# Display the matrix of top periods
+print(round(top_periods_matrix, 2))
+
+
+```
+
+
+```{r}
+idx1 <- which(spec_result$freq == top_freq_matrix[1,1])
+idx2 <- which(spec_result$freq == top_freq_matrix[1,2])
+
+# Check adjacency
+are_adjacent <- abs(idx1 - idx2) 
+z1 <- ts(x["Zone1"])
+plot(z1)
+spec_result <- spec.pgram(z1, log = "no", main = "Spectral Density using Periodogram")
+idx1 <- which(spec_result$freq == top_periods_matrix[1,1])
+idx2 <- which(spec_result$freq == top_periods_matrix[1,2])
+
+```
+We find that for zone one the dominant periodicities are 1 day (with double occurrence), 1/2 a day and \( \approx \)1 y, for zone 2 they are 1 day (with double occurrence), 1/2 a day and \( \approx \) 1/2 y, whereas for zone 3 they are approximately 1y, 1d, 1/2 year, 1d again
+
+```{r}
+pacf(z1)
+pacf(z2)
+pacf(z3)
+```
+```{r}
+library(dplyr)
+x1 <- select(x, -DateTime)
+cor_matrix <- cor(x1)
+library(reshape2)
+library(ggplot2)
+
+# Reshape correlation matrix for ggplot
+cor_melted <- melt(cor_matrix)
+
+# Plot heatmap
+ggplot(cor_melted, aes(Var1, Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +
+  theme_minimal() +
+  labs(title = "Correlation Heatmap", x = "Variables", y = "Variables")
+
+
+library(corrplot)
+library(corrgram)
+library(ggplot2)
+library(reshape2)
+
+corrplot(cor(x1))
+corrplot(cor(x1), method="color")
+png("corrplot.png", width = 800, height = 800)
+corrplot(cor(x1), method = "color")
+dev.off()
+corrgram(cor(x1))
+
+```
+
+
+```{r}
+library(dlm)
+
+length(z1)
+z11 <- z1[1:length(z1)/100]
+
+f <- 6*24
+# myMod <- dlmModPoly() + dlmModSeas(f)
+# buildF <- function(x){
+#   dlmModPoly(1, dV = exp(x[1]), dW = exp(x[2])) + dlmModSeas(f)
+# }
+# fit <- dlmMLE(z11, parm = c(0,0), build = buildF)
+
+```
+```{r}
+# Drop rows with missing values just in case
+x[] <- lapply(x, function(col) {
+  if (is.factor(col)) as.numeric(as.character(col)) else col
+})
+x_clean <- na.omit(x)
+x_clean$DateTime <- NULL
+
+x_clean<- as.data.frame(scale(x_clean))
+
+
+# Fit models for each Zone
+model_z1 <- lm(Zone1 ~ ., data = x_clean[, !names(x_clean) %in% c("Zone2", "Zone3")])
+summary(model_z1)
+model_z2 <- lm(Zone2 ~ ., data = x_clean[, !names(x_clean) %in% c("Zone1", "Zone3")])
+summary(model_z2)
+model_z3 <- lm(Zone3 ~ ., data = x_clean[, !names(x_clean) %in% c("Zone1", "Zone2")])
+summary(model_z3)
+
+
+```
+```{r}
+library(ggplot2)
+library(gridExtra)
+
+# Assuming you have read in your data as:
+# x <- read.csv("powerConsumption.csv")
+
+# Create the 3 plots
+p1 <- ggplot(x, aes(x = Zone1, y = Zone2)) +
+  geom_point(alpha = 0.1) +
+  ggtitle("Zone1 vs Zone2") +
+  theme_minimal()
+
+p2 <- ggplot(x, aes(x = Zone1, y = Zone3)) +
+  geom_point(alpha = 0.1) +
+  ggtitle("Zone1 vs Zone3") +
+  theme_minimal()
+
+p3 <- ggplot(x, aes(x = Zone2, y = Zone3)) +
+  geom_point(alpha = 0.1) +
+  ggtitle("Zone2 vs Zone3") +
+  theme_minimal()
+
+# Combine plots in a single view
+grid.arrange(p1, p2, p3, ncol = 2)
+```
+```{r}
+library(ggplot2)
+library(gridExtra)
+
+# Get the names of the three target variables and the others
+target_vars <- c("Zone1", "Zone2", "Zone3")
+other_vars <- setdiff(names(x), target_vars)
+
+# Optional: Standardize if you want to compare easily
+# x[target_vars] <- scale(x[target_vars])
+# x[other_vars] <- scale(x[other_vars])
+
+# Create a list to hold all plots
+plots <- list()
+
+# Loop over each pair: each Zone variable vs each of the other variables
+for (z in target_vars) {
+  for (v in other_vars) {
+    p <- ggplot(x, aes_string(x = v, y = z)) +
+      geom_point(alpha = 0.4) +
+      ggtitle(paste(z, "vs", v)) +
+      theme_minimal()
+    plots[[length(plots) + 1]] <- p
+  }
+}
+
+# Plot all in a grid (adjust ncol as you wish)
+grid.arrange(grobs = plots, ncol = 3)
+```
+
+
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+
+# Define zones and prepare lagged data
+zones <- c("Zone1", "Zone2", "Zone3")
+n <- length(zones)
+
+f <- 6*24
+
+x_lag <- x %>%
+  mutate(across(all_of(zones), ~lag(.)))
+
+plots <- matrix(list(), n, n)  # Initialize 3x3 plot list
+
+# Build each plot
+for (i in 1:n) {
+  for (j in 1:n) {
+    zi <- zones[i]
+    zj <- zones[j]
+    
+    if (i < j) {
+      # Upper triangle: Zone[i] vs Zone[j](t−1)
+      df <- data.frame(x = x[[zi]], y = x_lag[[zj]])
+      p <- ggplot(df, aes(x = x, y = y)) +
+        geom_point(color = "darkblue", alpha = 0.5, size = 0.6) +
+        theme_minimal() +
+        labs(title = paste(zi, "vs lag(", zj, ")", sep=""), x = zi, y = paste("lag(", zj, ")", sep=""))
+      plots[i, j] <- list(p)
+      
+    } else if (i > j) {
+      # Lower triangle: Zone[j] vs Zone[i](t−1)
+      df <- data.frame(x = x[[zi]], y = x_lag[[zj]])
+      p <- ggplot(df, aes(x = x, y = y)) +
+        geom_point(color = "darkgreen", alpha = 0.5, size = 0.6) +
+        theme_minimal() +
+        labs(title = paste(zi, "vs lag(", zj, ")", sep=""), x = zj, y = paste("lag(", zj, ")", sep=""))
+      plots[i, j] <- list(p)
+      
+    } else {
+      # Diagonal: Zone[i] vs Zone[i](t−1)
+      df <- data.frame(x = x[[zi]], y = x_lag[[zi]])
+      p <- ggplot(df, aes(x = x, y = y)) +
+        geom_point(color = "darkred", alpha = 0.5, size = 0.6) +
+        theme_minimal() +
+        labs(title = paste(zi, "vs lag(", zi, ")", sep=""), x = zi, y = paste("lag(", zi, ")", sep=""))
+      plots[i, j] <- list(p)
+    }
+  }
+}
+
+# Display 3×3 grid of plots
+grid.arrange(grobs = as.vector(plots), nrow = 3)
+```
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+
+# Define zones and lag value
+zones <- c("Zone1", "Zone2", "Zone3")
+n <- length(zones)
+f <- 6 * 24  # lag step
+
+# Apply lag of f steps
+x_lag <- x %>%
+  mutate(across(all_of(zones), ~lag(., n = f)))
+
+# Initialize plot matrix
+plots <- matrix(list(), n, n)
+
+# Generate plots
+for (i in 1:n) {
+  for (j in 1:n) {
+    zi <- zones[i]
+    zj <- zones[j]
+    
+    df <- data.frame(x = x[[zi]], y = x_lag[[zj]])
+    
+    if (i < j) {
+      p <- ggplot(df, aes(x = x, y = y)) +
+        geom_point(color = "darkblue", alpha = 0.5, size = 0.6) +
+        theme_minimal() +
+        labs(
+          title = paste(zi, "vs lag(", zj,")", sep=""),
+          x = zi, y = paste("lag(", zj, ")", sep="")
+        )
+    } else if (i > j) {
+      p <- ggplot(df, aes(x = x, y = y)) +
+        geom_point(color = "darkgreen", alpha = 0.5, size = 0.6) +
+        theme_minimal() +
+        labs(
+          title = paste(zi, "vs lag(", zj,")", sep=""),
+          x = zj, y = paste("lag(", zj, ")", sep="")
+        )
+    } else {
+      p <- ggplot(df, aes(x = x, y = y)) +
+        geom_point(color = "darkred", alpha = 0.5, size = 0.6) +
+        theme_minimal() +
+        labs(
+          title = paste(zi, "vs lag(", zi,")", sep=""),
+          x = zi, y = paste("lag(", zi, ")", sep="")
+        )
+    }
+    
+    plots[i, j] <- list(p)
+  }
+}
+
+# Show 3x3 plot grid
+grid.arrange(grobs = as.vector(plots), nrow = 3)
+
+png("zone_lag_plot.png", width = 2200, height = 1800, res = 300)
+grid.arrange(grobs = as.vector(plots), nrow = 3)
+dev.off()
+```
+
