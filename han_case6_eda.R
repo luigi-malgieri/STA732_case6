@@ -249,3 +249,23 @@ arimax_zone1 <- Arima(ts(df$Zone1[train_idx_1], frequency = 144),
                       order = c(3, 0, 0), 
                       seasonal = list(order = c(2, 2, 0), period = 6 * 24),
                       method = 'CSS')
+#
+fc_auto_arimax_zone1 <- forecast(auto_arimax1, 
+                                 xreg = as.matrix(
+                                   df[!train_idx_1, c('Temp', 'Humidity', 'WindSpeed','GDF', 'DF')]), 
+                                 h = delta1)
+autoplot(fc_auto_arimax_zone1)
+df_zone1_auto_arimax_fc <- data.frame(
+  time = time(fc_auto_arimax_zone1$mean),
+  predicted = as.numeric(fc_auto_arimax_zone1$mean),
+  actual = as.numeric(ts((df$Zone1[!train_idx_1]), frequency = 144)),
+  lower_95 = fc_auto_arimax_zone1$lower[, 2],
+  upper_95 = fc_auto_arimax_zone1$upper[, 2]
+)
+ggplot(df_zone1_auto_arimax_fc, aes(x = time)) +
+  geom_ribbon(aes(ymin = lower_95, ymax = upper_95), fill = "lightblue", alpha = 0.4) +
+  geom_line(aes(y = actual), color = "black", linewidth = 1, linetype = "solid") +
+  geom_line(aes(y = predicted), color = "blue", linewidth = 1, linetype = "dashed") +
+  labs(title = "Actual vs Predicted",
+       y = "Value", x = "Time") +
+  theme_minimal()
