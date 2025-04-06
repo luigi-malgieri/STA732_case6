@@ -219,11 +219,13 @@ ggplot(df_zone1_fc, aes(x = time)) +
        y = "Value", x = "Time") +
   theme_minimal()
 #
+library(xtable)
 auto_arimax1 <- auto.arima(ts(df$Zone1[train_idx_1], frequency = 144), 
                            xreg = as.matrix(
                              df[train_idx_1, c('Temp', 'Humidity', 'WindSpeed','GDF', 'DF')]),
                            seasonal = TRUE)
 summary(auto_arimax1)
+xtable(as.data.frame(t(auto_arimax1$coef)))
 checkresiduals(auto_arimax1, theme = theme_minimal())
 #
 arimax1 <- Arima(ts(df$Zone1[train_idx_1], frequency = 144), 
@@ -262,10 +264,145 @@ df_zone1_auto_arimax_fc <- data.frame(
   lower_95 = fc_auto_arimax_zone1$lower[, 2],
   upper_95 = fc_auto_arimax_zone1$upper[, 2]
 )
+
 ggplot(df_zone1_auto_arimax_fc, aes(x = time)) +
-  geom_ribbon(aes(ymin = lower_95, ymax = upper_95), fill = "lightblue", alpha = 0.4) +
-  geom_line(aes(y = actual), color = "black", linewidth = 1, linetype = "solid") +
-  geom_line(aes(y = predicted), color = "blue", linewidth = 1, linetype = "dashed") +
-  labs(title = "Actual vs Predicted",
-       y = "Value", x = "Time") +
-  theme_minimal()
+  geom_ribbon(
+    aes(ymin = lower_95, ymax = upper_95, fill = "95% Confidence Interval"),
+    alpha = 0.4
+  ) +
+  geom_line(
+    aes(y = actual, color = "Actual"),
+    linewidth = 1
+  ) +
+  geom_line(
+    aes(y = predicted, color = "Predicted"),
+    linewidth = 1,
+    linetype = "dashed"
+  ) +
+  scale_color_manual(
+    name = "",
+    values = c("Actual" = "black", "Predicted" = "blue")
+  ) +
+  scale_fill_manual(
+    name = "",
+    values = c("95% Confidence Interval" = "lightblue")
+  ) +
+  labs(
+    title = "Actual vs Predicted for Zone 1",
+    x = "Day",
+    y = "Power consumption"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(size = 20),
+        axis.text = element_text(size = 12))
+
+#--- zone2 ---#
+auto_arimax2 <- auto.arima(ts(df$Zone2[train_idx_1], frequency = 144), 
+                           xreg = as.matrix(
+                             df[train_idx_1, c('Temp', 'Humidity', 'WindSpeed','GDF', 'DF')]),
+                           seasonal = TRUE)
+summary(auto_arimax2)
+checkresiduals(auto_arimax2, theme = theme_minimal())
+#
+fc_auto_arimax_zone2 <- forecast(auto_arimax2, 
+                                 xreg = as.matrix(
+                                   df[!train_idx_1, c('Temp', 'Humidity', 'WindSpeed','GDF', 'DF')]), 
+                                 h = delta1)
+autoplot(fc_auto_arimax_zone2)
+df_zone2_auto_arimax_fc <- data.frame(
+  time = time(fc_auto_arimax_zone2$mean),
+  predicted = as.numeric(fc_auto_arimax_zone2$mean),
+  actual = as.numeric(ts((df$Zone2[!train_idx_1]), frequency = 144)),
+  lower_95 = fc_auto_arimax_zone2$lower[, 2],
+  upper_95 = fc_auto_arimax_zone2$upper[, 2]
+)
+
+ggplot(df_zone2_auto_arimax_fc, aes(x = time)) +
+  geom_ribbon(
+    aes(ymin = lower_95, ymax = upper_95, fill = "95% Confidence Interval"),
+    alpha = 0.4
+  ) +
+  geom_line(
+    aes(y = actual, color = "Actual"),
+    linewidth = 1
+  ) +
+  geom_line(
+    aes(y = predicted, color = "Predicted"),
+    linewidth = 1,
+    linetype = "dashed"
+  ) +
+  scale_color_manual(
+    name = "",
+    values = c("Actual" = "black", "Predicted" = "blue")
+  ) +
+  scale_fill_manual(
+    name = "",
+    values = c("95% Confidence Interval" = "lightblue")
+  ) +
+  labs(
+    title = "Actual vs Predicted for Zone 2",
+    x = "Day",
+    y = "Power consumption"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(size = 20),
+        axis.text = element_text(size = 12))
+
+#--- zone3 ---#
+auto_arimax3 <- auto.arima(ts(df$Zone3[train_idx_2], frequency = 144), 
+                           xreg = as.matrix(
+                             df[train_idx_2, c('Temp', 'Humidity', 'WindSpeed','GDF', 'DF')]),
+                           seasonal = TRUE)
+summary(auto_arimax3)
+checkresiduals(auto_arimax3, theme = theme_minimal())
+#
+fc_auto_arimax_zone3 <- forecast(auto_arimax3, 
+                                 xreg = as.matrix(
+                                   df[!train_idx_2, c('Temp', 'Humidity', 'WindSpeed','GDF', 'DF')]), 
+                                 h = delta2)
+autoplot(fc_auto_arimax_zone3)
+df_zone3_auto_arimax_fc <- data.frame(
+  time = time(fc_auto_arimax_zone3$mean),
+  predicted = as.numeric(fc_auto_arimax_zone3$mean),
+  actual = as.numeric(ts((df$Zone3[!train_idx_2]), frequency = 144)),
+  lower_95 = fc_auto_arimax_zone3$lower[, 2],
+  upper_95 = fc_auto_arimax_zone3$upper[, 2]
+)
+
+ggplot(df_zone3_auto_arimax_fc, aes(x = time)) +
+  geom_ribbon(
+    aes(ymin = lower_95, ymax = upper_95, fill = "95% Confidence Interval"),
+    alpha = 0.4
+  ) +
+  geom_line(
+    aes(y = actual, color = "Actual"),
+    linewidth = 1
+  ) +
+  geom_line(
+    aes(y = predicted, color = "Predicted"),
+    linewidth = 1,
+    linetype = "dashed"
+  ) +
+  scale_color_manual(
+    name = "",
+    values = c("Actual" = "black", "Predicted" = "blue")
+  ) +
+  scale_fill_manual(
+    name = "",
+    values = c("95% Confidence Interval" = "lightblue")
+  ) +
+  labs(
+    title = "Actual vs Predicted for Zone 3",
+    x = "Day",
+    y = "Power consumption"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        text = element_text(size = 20),
+        axis.text = element_text(size = 12))
+
+
+
+
