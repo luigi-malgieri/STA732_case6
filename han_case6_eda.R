@@ -131,9 +131,13 @@ train_idx_2 <- df$DateTime_dt < (as.POSIXct('2017/11/1 0:00', foramt = '%Y/%m/%d
 sum(train_idx_2)
 #
 eacf(ts(diff(df$Zone1, lag = 144)))
-acf(ts(diff(df$Zone1, lag = 144)))
+acf(ts(diff(df$Zone1, lag = 144)), lag.max = 1000)
 pacf(ts(df$Zone1), lag.max = 5000, ylim = c(-.2, .2))
-pacf(ts(diff(df$Zone1, lag = 144)), lag.max = 300)
+pacf(ts(diff(df$Zone1, lag = 144)), lag.max = 2000)
+zone1_diff <- ts(diff(df$Zone1, lag = 144))
+acf(diff(zone1_diff, lag = 144))
+pacf(diff(zone1_diff, lag = 144))
+# adf.test(ts(diff(df$Zone1, lag = 144)))
 arima1 <- stats::arima(ts(df$Zone1), order = c(1, 0, 0), seasonal = list(order = c(1, 1, 0), period = 6 * 24))
 summary(arima1)
 checkresiduals(arima1)
@@ -196,8 +200,24 @@ arima_zone1 <- Arima(ts(df$Zone1[train_idx_1]),
 summary(arima_zone1)
 checkresiduals(arima_zone1, theme = theme_minimal()) 
 #
-fc_zone1 <- forecast(arima_zone1, h = 4320)
+delta1 <- nrow(df) - sum(train_idx_1)
+delta2 <- nrow(df) - sum(train_idx_2)
+fc_zone1 <- forecast(arima_zone1, h = delta1)
 autoplot(fc_zone1)
+df_zone1_fc <- data.frame(
+  time = time(fc_zone1$mean),
+  predicted = as.numeric(fc_zone1$mean),
+  actual = as.numeric(ts((df$Zone1[!train_idx_1]), frequency = 144)),
+  lower_95 = fc_zone1$lower[, 2],
+  upper_95 = fc_zone1$upper[, 2]
+)
+ggplot(df_zone1_fc, aes(x = time)) +
+  geom_ribbon(aes(ymin = lower_95, ymax = upper_95), fill = "lightblue", alpha = 0.4) +
+  geom_line(aes(y = actual), color = "black", linewidth = 1, linetype = "solid") +
+  geom_line(aes(y = predicted), color = "blue", linewidth = 1, linetype = "dashed") +
+  labs(title = "Actual vs Predicted",
+       y = "Value", x = "Time") +
+  theme_minimal()
 #
 auto_arimax1 <- auto.arima(ts(df$Zone1[train_idx_1], frequency = 144), 
                            xreg = as.matrix(
@@ -211,7 +231,21 @@ arimax1 <- Arima(ts(df$Zone1[train_idx_1], frequency = 144),
                  seasonal = list(order = c(0, 1, 1), period = 6 * 24),
                  xreg = as.matrix(
                    df[train_idx_1, c('Temp', 'Humidity', 'WindSpeed','GDF', 'DF')]))
-
-
-
-
+summary(arimax1)
+autoplot(arimax1)
+checkresiduals(arimax1, theme = theme_minimal())
+#
+arimax2 <- Arima(ts(df$Zone1[train_idx_1], frequency = 144), 
+                 order = c(3, 0, 1), 
+                 seasonal = list(order = c(0, 1, 1), period = 6 * 24),
+                 xreg = as.matrix(
+                   df[train_idx_1, c('Temp', 'Humidity', 'WindSpeed','GDF', 'DF')]))
+summary(arimax2)
+autoplot(arimax2)
+checkresiduals(arimax2, theme = theme_minimal(df$Zone1[train_idx_1], frequency = 144),
+               )
+#
+arimax_zone1 <- Arima(ts(df$Zone1[train_idx_1], frequency = 144),
+                      order = c(3, 0, 0), 
+                      seasonal = list(order = c(2, 2, 0), period = 6 * 24),
+                      method = 'CSS')
