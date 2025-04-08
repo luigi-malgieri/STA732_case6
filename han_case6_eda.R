@@ -138,86 +138,86 @@ zone1_diff <- ts(diff(df$Zone1, lag = 144))
 acf(diff(zone1_diff, lag = 144))
 pacf(diff(zone1_diff, lag = 144))
 # adf.test(ts(diff(df$Zone1, lag = 144)))
-arima1 <- stats::arima(ts(df$Zone1), order = c(1, 0, 0), seasonal = list(order = c(1, 1, 0), period = 6 * 24))
-summary(arima1)
-checkresiduals(arima1)
-#
-arima2 <- stats::arima(ts(df$Zone1, frequency = 144), order = c(3, 0, 0), seasonal = list(order = c(0, 1, 1), period = 6 * 24))
-summary(arima2)
-checkresiduals(arima2)
-#
-arima3 <- stats::arima(ts(df$Zone1, frequency = 144),
-                       order = c(3, 0, 0), 
-                       seasonal = list(order = c(1, 0, 0), period = 6 * 24),
-                       method = "CSS")
-summary(arima3)
-checkresiduals(arima3)
-#
-arima4 <- stats::arima(ts(df$Zone1, frequency = 144),
-                       order = c(3, 0, 0), 
-                       seasonal = list(order = c(1, 1, 0), period = 6 * 24),
-                       method = "CSS")
-summary(arima4)
-checkresiduals(arima4)
-#
-arima5 <- stats::arima(ts(df$Zone1, frequency = 144),
-                       order = c(3, 0, 0), 
-                       seasonal = list(order = c(1, 1, 1), period = 6 * 24),
-                       method = "CSS")
-summary(arima5)
-checkresiduals(arima5)
-#
-arima6 <- stats::arima(ts(df$Zone1, frequency = 144),
-                       order = c(3, 0, 0), 
-                       seasonal = list(order = c(2, 1, 1), period = 6 * 24),
-                       method = "CSS")
-summary(arima6)
-checkresiduals(arima6)
-# 
-arima7 <- Arima(ts(df$Zone1),
-                       order = c(3, 0, 0), 
-                       seasonal = list(order = c(2, 1, 0), period = 6 * 24),
-                method = 'CSS')
-summary(arima7)
-checkresiduals(arima7) # 0.0005502
-# 
-arima8 <- Arima(ts(df$Zone1),
-                order = c(3, 0, 0), 
-                seasonal = list(order = c(2, 2, 0), period = 6 * 24),
-                method = 'CSS')
-summary(arima8)
-checkresiduals(arima8) # 0.04199
-#
-ts_zone1 <- ts(df$Zone1, frequency = 144)
-auto_arima1 <- auto.arima(ts_zone1, seasonal = TRUE)
-summary(auto_arima1)
-checkresiduals(auto_arima1, theme = theme_minimal())
-#
-arima_zone1 <- Arima(ts(df$Zone1[train_idx_1]),
-                     order = c(3, 0, 0), 
-                     seasonal = list(order = c(2, 2, 0), period = 6 * 24),
-                     method = 'CSS')
-summary(arima_zone1)
-checkresiduals(arima_zone1, theme = theme_minimal()) 
+# arima1 <- stats::arima(ts(df$Zone1), order = c(1, 0, 0), seasonal = list(order = c(1, 1, 0), period = 6 * 24))
+# summary(arima1)
+# checkresiduals(arima1)
+# #
+# arima2 <- stats::arima(ts(df$Zone1, frequency = 144), order = c(3, 0, 0), seasonal = list(order = c(0, 1, 1), period = 6 * 24))
+# summary(arima2)
+# checkresiduals(arima2)
+# #
+# arima3 <- stats::arima(ts(df$Zone1, frequency = 144),
+#                        order = c(3, 0, 0), 
+#                        seasonal = list(order = c(1, 0, 0), period = 6 * 24),
+#                        method = "CSS")
+# summary(arima3)
+# checkresiduals(arima3)
+# #
+# arima4 <- stats::arima(ts(df$Zone1, frequency = 144),
+#                        order = c(3, 0, 0), 
+#                        seasonal = list(order = c(1, 1, 0), period = 6 * 24),
+#                        method = "CSS")
+# summary(arima4)
+# checkresiduals(arima4)
+# #
+# arima5 <- stats::arima(ts(df$Zone1, frequency = 144),
+#                        order = c(3, 0, 0), 
+#                        seasonal = list(order = c(1, 1, 1), period = 6 * 24),
+#                        method = "CSS")
+# summary(arima5)
+# checkresiduals(arima5)
+# #
+# arima6 <- stats::arima(ts(df$Zone1, frequency = 144),
+#                        order = c(3, 0, 0), 
+#                        seasonal = list(order = c(2, 1, 1), period = 6 * 24),
+#                        method = "CSS")
+# summary(arima6)
+# checkresiduals(arima6)
+# # 
+# arima7 <- Arima(ts(df$Zone1),
+#                        order = c(3, 0, 0), 
+#                        seasonal = list(order = c(2, 1, 0), period = 6 * 24),
+#                 method = 'CSS')
+# summary(arima7)
+# checkresiduals(arima7) # 0.0005502
+# # 
+# arima8 <- Arima(ts(df$Zone1),
+#                 order = c(3, 0, 0), 
+#                 seasonal = list(order = c(2, 2, 0), period = 6 * 24),
+#                 method = 'CSS')
+# summary(arima8)
+# checkresiduals(arima8) # 0.04199
+# #
+# ts_zone1 <- ts(df$Zone1, frequency = 144)
+# auto_arima1 <- auto.arima(ts_zone1, seasonal = TRUE)
+# summary(auto_arima1)
+# checkresiduals(auto_arima1, theme = theme_minimal())
+# #
+# arima_zone1 <- Arima(ts(df$Zone1[train_idx_1]),
+#                      order = c(3, 0, 0), 
+#                      seasonal = list(order = c(2, 2, 0), period = 6 * 24),
+#                      method = 'CSS')
+# summary(arima_zone1)
+# checkresiduals(arima_zone1, theme = theme_minimal()) 
 #
 delta1 <- nrow(df) - sum(train_idx_1)
 delta2 <- nrow(df) - sum(train_idx_2)
-fc_zone1 <- forecast(arima_zone1, h = delta1)
-autoplot(fc_zone1)
-df_zone1_fc <- data.frame(
-  time = time(fc_zone1$mean),
-  predicted = as.numeric(fc_zone1$mean),
-  actual = as.numeric(ts((df$Zone1[!train_idx_1]), frequency = 144)),
-  lower_95 = fc_zone1$lower[, 2],
-  upper_95 = fc_zone1$upper[, 2]
-)
-ggplot(df_zone1_fc, aes(x = time)) +
-  geom_ribbon(aes(ymin = lower_95, ymax = upper_95), fill = "lightblue", alpha = 0.4) +
-  geom_line(aes(y = actual), color = "black", linewidth = 1, linetype = "solid") +
-  geom_line(aes(y = predicted), color = "blue", linewidth = 1, linetype = "dashed") +
-  labs(title = "Actual vs Predicted",
-       y = "Value", x = "Time") +
-  theme_minimal()
+# fc_zone1 <- forecast(arima_zone1, h = delta1)
+# autoplot(fc_zone1)
+# df_zone1_fc <- data.frame(
+#   time = time(fc_zone1$mean),
+#   predicted = as.numeric(fc_zone1$mean),
+#   actual = as.numeric(ts((df$Zone1[!train_idx_1]), frequency = 144)),
+#   lower_95 = fc_zone1$lower[, 2],
+#   upper_95 = fc_zone1$upper[, 2]
+# )
+# ggplot(df_zone1_fc, aes(x = time)) +
+#   geom_ribbon(aes(ymin = lower_95, ymax = upper_95), fill = "lightblue", alpha = 0.4) +
+#   geom_line(aes(y = actual), color = "black", linewidth = 1, linetype = "solid") +
+#   geom_line(aes(y = predicted), color = "blue", linewidth = 1, linetype = "dashed") +
+#   labs(title = "Actual vs Predicted",
+#        y = "Value", x = "Time") +
+#   theme_minimal()
 #
 library(xtable)
 auto_arimax1 <- auto.arima(ts(df$Zone1[train_idx_1], frequency = 144), 
@@ -228,29 +228,29 @@ summary(auto_arimax1)
 xtable(as.data.frame(t(auto_arimax1$coef)))
 checkresiduals(auto_arimax1, theme = theme_minimal())
 #
-arimax1 <- Arima(ts(df$Zone1[train_idx_1], frequency = 144), 
-                 order = c(3, 0, 0), 
-                 seasonal = list(order = c(0, 1, 1), period = 6 * 24),
-                 xreg = as.matrix(
-                   df[train_idx_1, c('Temp', 'Humidity', 'WindSpeed','GDF', 'DF')]))
-summary(arimax1)
-autoplot(arimax1)
-checkresiduals(arimax1, theme = theme_minimal())
+# arimax1 <- Arima(ts(df$Zone1[train_idx_1], frequency = 144), 
+#                  order = c(3, 0, 0), 
+#                  seasonal = list(order = c(0, 1, 1), period = 6 * 24),
+#                  xreg = as.matrix(
+#                    df[train_idx_1, c('Temp', 'Humidity', 'WindSpeed','GDF', 'DF')]))
+# summary(arimax1)
+# autoplot(arimax1)
+# checkresiduals(arimax1, theme = theme_minimal())
+# #
+# arimax2 <- Arima(ts(df$Zone1[train_idx_1], frequency = 144), 
+#                  order = c(3, 0, 1), 
+#                  seasonal = list(order = c(0, 1, 1), period = 6 * 24),
+#                  xreg = as.matrix(
+#                    df[train_idx_1, c('Temp', 'Humidity', 'WindSpeed','GDF', 'DF')]))
+# summary(arimax2)
+# autoplot(arimax2)
+# checkresiduals(arimax2, theme = theme_minimal(df$Zone1[train_idx_1], frequency = 144),
+#                )
 #
-arimax2 <- Arima(ts(df$Zone1[train_idx_1], frequency = 144), 
-                 order = c(3, 0, 1), 
-                 seasonal = list(order = c(0, 1, 1), period = 6 * 24),
-                 xreg = as.matrix(
-                   df[train_idx_1, c('Temp', 'Humidity', 'WindSpeed','GDF', 'DF')]))
-summary(arimax2)
-autoplot(arimax2)
-checkresiduals(arimax2, theme = theme_minimal(df$Zone1[train_idx_1], frequency = 144),
-               )
-#
-arimax_zone1 <- Arima(ts(df$Zone1[train_idx_1], frequency = 144),
-                      order = c(3, 0, 0), 
-                      seasonal = list(order = c(2, 2, 0), period = 6 * 24),
-                      method = 'CSS')
+# arimax_zone1 <- Arima(ts(df$Zone1[train_idx_1], frequency = 144),
+#                       order = c(3, 0, 0), 
+#                       seasonal = list(order = c(2, 2, 0), period = 6 * 24),
+#                       method = 'CSS')
 #
 fc_auto_arimax_zone1 <- forecast(auto_arimax1, 
                                  xreg = as.matrix(
