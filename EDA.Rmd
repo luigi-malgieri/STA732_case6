@@ -17,8 +17,8 @@ When you click the **Knit** button a document will be generated that includes bo
 
 ```{r}
 getwd()
-x <- read.csv("powerConsumption.csv")
-
+powcon <- read.csv("powerConsumption.csv")
+x <- powcon
 z1 <- ts(x["Zone1"])
 plot(z1)
 spec_result1 <- spec.pgram(z1, log = "no", main = "Spectral Density using Periodogram")
@@ -222,21 +222,6 @@ corrgram(cor(x1))
 
 ```
 
-
-```{r}
-library(dlm)
-
-length(z1)
-z11 <- z1[1:length(z1)/100]
-
-f <- 6*24
-# myMod <- dlmModPoly() + dlmModSeas(f)
-# buildF <- function(x){
-#   dlmModPoly(1, dV = exp(x[1]), dW = exp(x[2])) + dlmModSeas(f)
-# }
-# fit <- dlmMLE(z11, parm = c(0,0), build = buildF)
-
-```
 ```{r}
 # Drop rows with missing values just in case
 x[] <- lapply(x, function(col) {
@@ -258,63 +243,6 @@ summary(model_z3)
 
 
 ```
-```{r}
-library(ggplot2)
-library(gridExtra)
-
-# Assuming you have read in your data as:
-# x <- read.csv("powerConsumption.csv")
-
-# Create the 3 plots
-p1 <- ggplot(x, aes(x = Zone1, y = Zone2)) +
-  geom_point(alpha = 0.1) +
-  ggtitle("Zone1 vs Zone2") +
-  theme_minimal()
-
-p2 <- ggplot(x, aes(x = Zone1, y = Zone3)) +
-  geom_point(alpha = 0.1) +
-  ggtitle("Zone1 vs Zone3") +
-  theme_minimal()
-
-p3 <- ggplot(x, aes(x = Zone2, y = Zone3)) +
-  geom_point(alpha = 0.1) +
-  ggtitle("Zone2 vs Zone3") +
-  theme_minimal()
-
-# Combine plots in a single view
-grid.arrange(p1, p2, p3, ncol = 2)
-```
-```{r}
-library(ggplot2)
-library(gridExtra)
-
-# Get the names of the three target variables and the others
-target_vars <- c("Zone1", "Zone2", "Zone3")
-other_vars <- setdiff(names(x), target_vars)
-
-# Optional: Standardize if you want to compare easily
-# x[target_vars] <- scale(x[target_vars])
-# x[other_vars] <- scale(x[other_vars])
-
-# Create a list to hold all plots
-plots <- list()
-
-# Loop over each pair: each Zone variable vs each of the other variables
-for (z in target_vars) {
-  for (v in other_vars) {
-    p <- ggplot(x, aes_string(x = v, y = z)) +
-      geom_point(alpha = 0.4) +
-      ggtitle(paste(z, "vs", v)) +
-      theme_minimal()
-    plots[[length(plots) + 1]] <- p
-  }
-}
-
-# Plot all in a grid (adjust ncol as you wish)
-grid.arrange(grobs = plots, ncol = 3)
-```
-
-
 
 ```{r}
 library(ggplot2)
@@ -433,5 +361,106 @@ grid.arrange(grobs = as.vector(plots), nrow = 3)
 png("zone_lag_plot.png", width = 2200, height = 1800, res = 300)
 grid.arrange(grobs = as.vector(plots), nrow = 3)
 dev.off()
+```
+
+```{r}
+library(dlm)
+
+length(z1)
+z11 <- z1[1:length(z1)/100]
+
+f <- 6*24
+myMod <- dlmModPoly() + dlmModSeas(f)
+# buildF <- function(x){
+#   dlmModPoly(1, dV = exp(x[1]), dW = exp(x[2])) + dlmModSeas(f)
+# }
+# fit <- dlmMLE(z11, parm = c(0,0), build = buildF)
+
+```
+```{r}
+library(dplyr)
+
+# Assume z1 is a vector and x is a data frame with same number of rows
+str(z1)
+T <- length(z1)
+z1 <- as.vector(z1)
+
+data <- data.frame(z1)
+data$time_of_day <- rep(1:144, length.out = nrow(data))
+# Daily cycle average: average z1 by time_of_day
+daily_pattern <- tapply(data$z1, data$time_of_day, mean)
+plot(daily_pattern)
+
+daily_cycle <- rep(daily_pattern, length.out = nrow(data))
+
+# Add it back to your data frame if you want
+data$z1_daily_cycle <- daily_cycle
+
+# data <- data.frame(
+#   z1 = z1,
+#   z1_lag1 = dplyr::lag(z1, 1),
+#   z1_lag2 = dplyr::lag(z1, 2),
+#   z1_daily_cycle = daily_cycle
+# )
+
+data <- data.frame(
+  z1 = z1,
+  z1_lag1 = dplyr::lag(z1, 1),
+  z1_lag2 = dplyr::lag(z1, 2),
+  z1_lag143 = dplyr::lag(z1, 143),
+  z1_lag144 = dplyr::lag(z1, 144),
+  z1_lag145 = dplyr::lag(z1, 145)
+)
+
+# Add lag-1 for each column in x
+x <- powcon[c("Temp", "Humidity", "WindSpeed","GDF", "DF", "Zone2","Zone3")]
+x_lag1 <- as.data.frame(lapply(x, function(col) dplyr::lag(col, 1)))
+names(x_lag1) <- paste0(names(x), "_lag1")
+
+# Combine
+data <- cbind(data, x_lag1)
+
+# Remove NA rows due to lagging
+data <- na.omit(data)
+data <- data.frame(scale(data))
+
+lm_simple <- lm(z1 ~ (. ^ 2), data = data)
+summary(lm_simple)
+s <- summary(lm_simple)
+s
+coef <- s$coefficients
+# Sort by descending estimate
+coef_sorted <- coef[order(-coef[, 1]), ]
+# Keep only rows with p-value ≤ 0.05
+coef_sig <- coef_sorted[coef_sorted[, 4] <= 0.05, ]
+coef_sig
+
+residuals_lm <- residuals(lm_simple)
+acf(residuals_lm, lag.max = 1000)
+pacf(residuals_lm, lag.max = 1000)
+a <- acf(residuals_lm, lag.max = 1000)
+which(a$acf > 0.15) 
+plot(residuals_lm, type = "l", col = "blue", 
+     main = "Residuals from Simple Linear Model", 
+     xlab = "Time", ylab = "Residuals")
+abline(h = 0, col = "red", lty = 2)
+
+# #######################################
+# 
+# data2 <- data
+# data2$z1_daydiff <- data2$z1 - data2$z1_lag144
+# data2 <- subset(data2, select = -c(z1,z1_lag144))
+# lm_simple <- lm(z1_daydiff ~ ., data = data2)
+# summary(lm_simple)
+# 
+# residuals_lm <- residuals(lm_simple)
+# acf(residuals_lm, lag.max = 1000)
+# a <- acf(residuals_lm, lag.max = 1000)
+# which(a$acf < -0.15) 
+# plot(residuals_lm, type = "l", col = "blue", 
+#      main = "Residuals from Simple Linear Model", 
+#      xlab = "Time", ylab = "Residuals")
+# abline(h = 0, col = "red", lty = 2)
+
 ```
 
