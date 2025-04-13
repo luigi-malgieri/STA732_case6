@@ -197,7 +197,7 @@ system.time(
                                            m0 = mu0.1, C0 = diag(c0.1)),
                          shape.y = 1.0, rate.y = 1.0,
                          shape.theta = 1.0, rate.theta = 1.0, 
-                         n.sample = 1.5e3, 
+                         n.sample = 1e4, 
                          ind = 6:11)
 )
 
@@ -208,7 +208,7 @@ system.time(
                                                   m0 = mu0.2, C0 = diag(c0.2)),
                             shape.y = 1.0, rate.y = 1.0,
                             shape.theta = 1.0, rate.theta = 1.0, 
-                            n.sample = 2e4, thin = 20,
+                            n.sample = 1e4,
                             ind = 6:11)
 )
 
@@ -219,6 +219,6 @@ system.time(
                                                   m0 = mu0.3, C0 = diag(c0.3)),
                             shape.y = 1.0, rate.y = 1.0,
                             shape.theta = 1.0, rate.theta = 1.0, 
-                            n.sample = 2e4, thin = 20,
+                            n.sample = 1e4, thin = 20,
                             ind = 6:11)
 )
