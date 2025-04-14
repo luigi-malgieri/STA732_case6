@@ -191,34 +191,34 @@ cbind(mle.out3$par,sqrt(diag(parVar3)))
 
 ### Gibbs ####
 system.time(
-  gibbs.out1 <- dlmGibbsDIG(y=Y1, mod = dlmModReg(X1, addInt = F,dV = 0.15,
+  gibbs.out1.new <- dlmGibbsDIG(y=Y1, mod = dlmModReg(X1, addInt = F,dV = 0.15,
                                            ##dW=rep(0.01,ncol(X)+1),
-                                           dW = c(rep(0, 5), rep(0.01, 6)),
+                                           dW = c(rep(0.01, 6), rep(0, 5)),
                                            m0 = mu0.1, C0 = diag(c0.1)),
                          shape.y = 1.0, rate.y = 1.0,
                          shape.theta = 1.0, rate.theta = 1.0, 
-                         n.sample = 1e4, 
+                         n.sample = 1e4, thin = 10,
                          ind = 6:11)
 )
 
 system.time(
   gibbs.out2 <- dlmGibbsDIG(y=Y2, mod = dlmModReg(X2, addInt = F,dV = 0.15,
                                                   ##dW=rep(0.01,ncol(X)+1),
-                                                  dW = c(rep(0, 5), rep(0.01, 6)),
+                                                  dW = c(rep(0.01, 6), rep(0, 5)),
                                                   m0 = mu0.2, C0 = diag(c0.2)),
                             shape.y = 1.0, rate.y = 1.0,
                             shape.theta = 1.0, rate.theta = 1.0, 
-                            n.sample = 1e4,
+                            n.sample = 1e4, thin = 10,
                             ind = 6:11)
 )
 
 system.time(
   gibbs.out3 <- dlmGibbsDIG(y=Y3, mod = dlmModReg(X3, addInt = F,dV = 0.15,
                                                   ##dW=rep(0.01,ncol(X)+1),
-                                                  dW = c(rep(0, 5), rep(0.01, 6)),
+                                                  dW = c(rep(0.01, 6), rep(0, 5)),
                                                   m0 = mu0.3, C0 = diag(c0.3)),
                             shape.y = 1.0, rate.y = 1.0,
                             shape.theta = 1.0, rate.theta = 1.0, 
-                            n.sample = 1e4, thin = 20,
+                            n.sample = 1e4, thin = 10,
                             ind = 6:11)
 )
